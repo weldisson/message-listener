@@ -1,3 +1,22 @@
-# Node.js
+# Ignorar node_modules
 node_modules/
+
+# Ignorar diretório de autenticação (contém sessão do WhatsApp)
+auth_info_baileys/
+
+# Ignorar logs
+*.log
+logs/
+
+# Ignorar arquivos de ambiente
 .env
+.env.local
+
+# Ignorar arquivos temporários
+*.tmp
+temp/
+
+# Ignorar arquivos do sistema
+.DS_Store
+Thumbs.db
+
