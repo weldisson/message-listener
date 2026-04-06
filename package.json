@@ -1,0 +1,7 @@
+{
+  "name": "whatsapp-service",
+  "version": "1.0.0",
+  "dependencies": {
+    "@adiwajshing/baileys": "^4.0.0"
+  }
+}

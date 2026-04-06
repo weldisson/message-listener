@@ -1,2 +1,3 @@
-// index.js content
-console.log('This is the index.js file for the message listener.');
+// Main WhatsApp Baileys API server
+
+// Your server code goes here.
