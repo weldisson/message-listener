@@ -2,20 +2,12 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Instala dependências do sistema necessárias
-RUN apk add --no-cache \
-    git \
-    python3 \
-    make \
-    g++ \
-    cairo-dev \
-    jpeg-dev \
-    pango-dev \
-    giflib-dev
+# Instala dependências mínimas do sistema
+RUN apk add --no-cache git
 
 # Copia package.json e instala dependências
 COPY package*.json ./
-RUN npm install
+RUN npm ci --only=production
 
 # Copia o código da aplicação
 COPY . .

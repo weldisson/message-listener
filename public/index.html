@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Baileys Service</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    .page {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+    h1 {
+      margin-top: 0;
+      color: #fff;
+      text-align: center;
+      font-size: 2.5rem;
+      font-weight: 300;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      text-align: center;
+      color: rgba(255,255,255,0.9);
+      font-size: 1.1rem;
+      margin-bottom: 40px;
+      font-weight: 300;
+    }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      padding: 30px;
+      margin-bottom: 25px;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+    }
+    .card h2 {
+      margin-top: 0;
+      color: #4a5568;
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card h2::before {
+      content: '';
+      width: 4px;
+      height: 24px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 2px;
+    }
+    label {
+      display: block;
+      margin: 15px 0 8px;
+      font-weight: 600;
+      color: #4a5568;
+      font-size: 0.95rem;
+    }
+    input, textarea, select, button {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: all 0.3s ease;
+    }
+    input, textarea, select {
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      background: #fff;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      position: relative;
+      overflow: hidden;
+    }
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    button:hover::before {
+      left: 100%;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    pre {
+      background: #f8fafc;
+      padding: 16px;
+      border-radius: 12px;
+      overflow-x: auto;
+      border: 1px solid #e2e8f0;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    #qrArea {
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 2px dashed #cbd5e0;
+      margin: 20px 0;
+      transition: all 0.3s ease;
+    }
+    #qrArea img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    #qrArea.loading {
+      background: linear-gradient(45deg, #f8fafc, #e2e8f0);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+    .small {
+      font-size: 0.9rem;
+      color: #718096;
+      margin-top: 10px;
+    }
+    .status-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+      animation: blink 2s infinite;
+    }
+    .status-connected {
+      background: #48bb78;
+    }
+    .status-disconnected {
+      background: #f56565;
+    }
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.5; }
+    }
+    select {
+      cursor: pointer;
+    }
+    h3 {
+      margin-top: 0;
+      color: #4a5568;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h3::before {
+      content: '';
+      width: 3px;
+      height: 20px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 2px;
+    }
+    .success-message {
+      background: linear-gradient(135deg, #48bb78, #38a169);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+    .error-message {
+      background: linear-gradient(135deg, #f56565, #e53e3e);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+      margin-bottom: 25px;
+    }
+    @media (max-width: 768px) {
+      .grid-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>📱 WhatsApp Baileys Service</h1>
+    <div style="text-align: center; margin-bottom: 20px;">
+      <span class="status-indicator status-disconnected"></span>
+      <span id="connectionStatus" style="color: rgba(255,255,255,0.9); font-size: 0.9rem;">Verificando conexão...</span>
+    </div>
+    <p class="subtitle">Interface moderna para controle e envio de mensagens</p>
+
+    <div class="card">
+      <h2>💬 Gerenciar Grupos & Enviar Mensagens</h2>
+
+      <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0;">
+        <button id="loadGroups">📋 Carregar Grupos</button>
+        <p class="small">🎯 Selecione um grupo para preencher automaticamente o campo de destino</p>
+        <div class="form-group">
+          <label for="groupSelect">Selecionar Grupo</label>
+          <select id="groupSelect">
+            <option value="">Selecione um grupo</option>
+          </select>
+        </div>
+        <pre id="groupsResult"></pre>
+      </div>
+
+      <div>
+        <h3 style="color: #4a5568; font-size: 1.2rem; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+          <span style="width: 3px; height: 20px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 2px;"></span>
+          ✉️ Enviar Mensagem
+        </h3>
+        <form id="sendForm">
+          <div class="form-group">
+            <label for="to">📞 Destino</label>
+            <input id="to" name="to" placeholder="5511999999999 ou 123456789-123456789@g.us" required>
+          </div>
+          <div class="form-group">
+            <label for="message">✍️ Mensagem</label>
+            <textarea id="message" name="message" rows="4" placeholder="Digite sua mensagem aqui..." required></textarea>
+          </div>
+          <button type="submit">🚀 Enviar Mensagem</button>
+        </form>
+        <pre id="sendResult"></pre>
+      </div>
+    </div>
+
+    <div class="grid-container">
+      <div class="card">
+        <h2>📱 QR Code</h2>
+        <div id="qrArea">Carregando...</div>
+        <button id="refreshQr">🔄 Atualizar QR</button>
+        <p class="small">📷 Use o QR Code para reconectar o WhatsApp quando necessário</p>
+      </div>
+
+      <div class="card">
+        <h2>📊 Status da Conexão</h2>
+        <pre id="statusJson">Carregando...</pre>
+        <button id="refreshStatus">🔄 Atualizar Status</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const statusJson = document.getElementById('statusJson');
+    const qrArea = document.getElementById('qrArea');
+    const refreshStatus = document.getElementById('refreshStatus');
+    const refreshQr = document.getElementById('refreshQr');
+    const sendForm = document.getElementById('sendForm');
+    const sendResult = document.getElementById('sendResult');
+    const toInput = document.getElementById('to');
+    const groupSelect = document.getElementById('groupSelect');
+    const groupsResult = document.getElementById('groupsResult');
+    const loadGroups = document.getElementById('loadGroups');
+
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/status');
+        const data = await res.json();
+        statusJson.textContent = JSON.stringify(data, null, 2);
+
+        // Atualizar indicador visual de status
+        const statusIndicator = document.querySelector('.status-indicator');
+        const connectionStatus = document.getElementById('connectionStatus');
+
+        if (data.connected) {
+          statusIndicator.className = 'status-indicator status-connected';
+          connectionStatus.textContent = 'Conectado ao WhatsApp';
+          connectionStatus.style.color = '#48bb78';
+        } else {
+          statusIndicator.className = 'status-indicator status-disconnected';
+          connectionStatus.textContent = 'Desconectado do WhatsApp';
+          connectionStatus.style.color = '#f56565';
+        }
+      } catch (err) {
+        statusJson.textContent = 'Erro ao carregar status: ' + err.message;
+        const statusIndicator = document.querySelector('.status-indicator');
+        const connectionStatus = document.getElementById('connectionStatus');
+        statusIndicator.className = 'status-indicator status-disconnected';
+        connectionStatus.textContent = 'Erro na conexão';
+        connectionStatus.style.color = '#f56565';
+      }
+    }
+
+    async function fetchQr() {
+      const qrArea = document.getElementById('qrArea');
+      qrArea.textContent = '🔄 Carregando...';
+      qrArea.classList.add('loading');
+
+      try {
+        const res = await fetch('/qr');
+        const data = await res.json();
+        qrArea.classList.remove('loading');
+
+        if (data.qr) {
+          const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(data.qr);
+          qrArea.innerHTML = '<img src="' + qrUrl + '" alt="QR Code" style="border-radius: 8px;">';
+        } else {
+          qrArea.innerHTML = '<div style="text-align: center; color: #48bb78; font-weight: 500;">✅ ' + (data.message || 'QR Code não disponível.') + '</div>';
+        }
+      } catch (err) {
+        qrArea.classList.remove('loading');
+        qrArea.innerHTML = '<div style="text-align: center; color: #f56565; font-weight: 500;">❌ Erro ao carregar QR: ' + err.message + '</div>';
+      }
+    }
+
+    refreshStatus.addEventListener('click', fetchStatus);
+    refreshQr.addEventListener('click', fetchQr);
+    loadGroups.addEventListener('click', fetchGroups);
+    groupSelect.addEventListener('change', () => {
+      if (groupSelect.value) {
+        toInput.value = groupSelect.value;
+      }
+    });
+
+    sendForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const sendResult = document.getElementById('sendResult');
+      const submitButton = sendForm.querySelector('button[type="submit"]');
+
+      // Estado de carregamento
+      submitButton.disabled = true;
+      submitButton.textContent = '⏳ Enviando...';
+      sendResult.innerHTML = '<div style="text-align: center; color: #667eea;">📤 Enviando mensagem...</div>';
+
+      const formData = new FormData(sendForm);
+      const body = {
+        to: formData.get('to'),
+        message: formData.get('message')
+      };
+
+      try {
+        const res = await fetch('/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          sendResult.innerHTML = '<div class="success-message">✅ ' + data.message + '</div>';
+          // Limpar formulário em caso de sucesso
+          sendForm.reset();
+        } else {
+          sendResult.innerHTML = '<div class="error-message">❌ ' + (data.error || 'Erro desconhecido') + '</div>';
+        }
+      } catch (err) {
+        sendResult.innerHTML = '<div class="error-message">❌ Erro ao enviar: ' + err.message + '</div>';
+      } finally {
+        // Restaurar botão
+        submitButton.disabled = false;
+        submitButton.textContent = '🚀 Enviar Mensagem';
+      }
+    });
+
+    async function fetchGroups() {
+      const groupsResult = document.getElementById('groupsResult');
+      const loadGroupsButton = document.getElementById('loadGroups');
+
+      groupsResult.innerHTML = '<div style="text-align: center; color: #667eea;">🔄 Carregando grupos...</div>';
+      loadGroupsButton.disabled = true;
+      loadGroupsButton.textContent = '⏳ Carregando...';
+
+      groupSelect.innerHTML = '<option value="">Selecione um grupo</option>';
+
+      try {
+        const res = await fetch('/groups');
+        const data = await res.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Falha ao carregar grupos');
+        }
+
+        if (!Array.isArray(data.groups) || data.groups.length === 0) {
+          groupsResult.innerHTML = '<div style="text-align: center; color: #f56565;">📭 Nenhum grupo encontrado.</div>';
+          return;
+        }
+
+        data.groups.forEach(group => {
+          const option = document.createElement('option');
+          option.value = group.jid;
+          option.textContent = `👥 ${group.subject} (${group.participants} participantes)`;
+          groupSelect.appendChild(option);
+        });
+
+        groupsResult.innerHTML = `<div class="success-message">✅ Grupos carregados: ${data.groups.length}</div>`;
+      } catch (err) {
+        groupsResult.innerHTML = '<div class="error-message">❌ Erro ao carregar grupos: ' + err.message + '</div>';
+      } finally {
+        loadGroupsButton.disabled = false;
+        loadGroupsButton.textContent = '📋 Carregar Grupos';
+      }
+    }
+
+    fetchStatus();
+    fetchQr();
+    fetchGroups();
+  </script>
+</body>
+</html>
