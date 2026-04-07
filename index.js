@@ -14,7 +14,7 @@ import qrcode from 'qrcode-terminal';
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use('/ui', express.static('public'));
 app.get('/ui', (req, res) => res.sendFile(new URL('./public/index.html', import.meta.url)));
 
@@ -531,6 +531,59 @@ app.post('/webhook', (req, res) => {
     message: 'Webhook configurado com sucesso',
     url
   });
+});
+
+/**
+ * POST /send-document - Envia documento via base64 (para backups, etc)
+ * Body: {
+ *   "to": "5521979052877",
+ *   "base64": "UEsDBBQAAAA...",
+ *   "filename": "backup.dump",
+ *   "caption": "Backup do banco"
+ * }
+ */
+app.post('/send-document', async (req, res) => {
+  if (!isConnected) {
+    return res.status(503).json({ error: 'WhatsApp não conectado' });
+  }
+
+  const { to, base64, filename, caption } = req.body;
+
+  if (!to || !base64 || !filename) {
+    return res.status(400).json({
+      error: 'Parâmetros "to", "base64" e "filename" são obrigatórios'
+    });
+  }
+
+  try {
+    let jid = to.toString().trim();
+    if (!jid.includes('@')) {
+      jid = `${jid}@s.whatsapp.net`;
+    }
+
+    const buffer = Buffer.from(base64, 'base64');
+
+    await sock.sendMessage(jid, {
+      document: buffer,
+      fileName: filename,
+      caption: caption || ''
+    });
+
+    logger.info(`Documento ${filename} enviado para ${jid} (${(buffer.length / 1024).toFixed(1)}KB)`);
+
+    res.json({
+      success: true,
+      message: `Documento ${filename} enviado com sucesso`,
+      to: jid,
+      size: `${(buffer.length / 1024).toFixed(1)}KB`
+    });
+  } catch (error) {
+    logger.error('Erro ao enviar documento:', error);
+    res.status(500).json({
+      error: 'Erro ao enviar documento',
+      details: error.message
+    });
+  }
 });
 
 /**
