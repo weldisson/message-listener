@@ -145,37 +145,55 @@ async function connectToWhatsApp() {
 
   // Event: recebimento de mensagens
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    const message = messages[0];
-    
-    // Ignora mensagens antigas e mensagens próprias
-    if (!message.message || message.key.fromMe) return;
+    // Apenas processar novas mensagens reais (ignorar sincronizações antigas)
+    if (type !== 'notify') return;
 
-    logger.info('📨 Nova mensagem recebida');
+    for (const message of messages) {
+      // Ignora mensagens sem conteúdo ou mensagens enviadas por mim
+      if (!message.message || message.key.fromMe) continue;
 
-    // Extrai informações da mensagem
-    const messageData = {
-      id: message.key.id,
-      remoteJid: message.key.remoteJid,
-      fromMe: message.key.fromMe,
-      timestamp: message.messageTimestamp,
-      pushName: message.pushName,
-      message: message.message,
-      messageType: Object.keys(message.message)[0],
-      text: message.message.conversation || 
-            message.message.extendedTextMessage?.text ||
-            '',
-      isGroup: message.key.remoteJid?.endsWith('@g.us'),
-      participant: message.key.participant
-    };
+      logger.info('📨 Nova mensagem recebida');
 
-    logger.info(`De: ${messageData.pushName} (${messageData.remoteJid})`);
-    logger.info(`Texto: ${messageData.text}`);
+      // Resolve mensagens efêmeras (temporárias) ou visualização única
+      const msgContent = message.message?.ephemeralMessage?.message || 
+                         message.message?.viewOnceMessage?.message || 
+                         message.message;
+                         
+      const messageType = Object.keys(msgContent)[0];
 
-    // Envia para o webhook do n8n
-    await sendToN8N({
-      event: 'message.received',
-      data: messageData
-    });
+      // Extrai o texto da mensagem com base no tipo
+      const text = msgContent.conversation || 
+                   msgContent.extendedTextMessage?.text ||
+                   msgContent.imageMessage?.caption ||
+                   msgContent.videoMessage?.caption ||
+                   msgContent.documentMessage?.caption ||
+                   msgContent.buttonsResponseMessage?.selectedButtonId ||
+                   msgContent.listResponseMessage?.title ||
+                   '';
+
+      // Extrai informações da mensagem
+      const messageData = {
+        id: message.key.id,
+        remoteJid: message.key.remoteJid,
+        fromMe: message.key.fromMe,
+        timestamp: message.messageTimestamp,
+        pushName: message.pushName || 'Desconhecido',
+        message: message.message,
+        messageType: messageType,
+        text: text,
+        isGroup: message.key.remoteJid?.endsWith('@g.us'),
+        participant: message.key.participant
+      };
+
+      logger.info(`De: ${messageData.pushName} (${messageData.remoteJid})`);
+      logger.info(`Texto: ${messageData.text}`);
+
+      // Envia para o webhook do n8n
+      await sendToN8N({
+        event: 'message.received',
+        data: messageData
+      });
+    }
   });
 
   // Event: atualização de presença
