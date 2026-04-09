@@ -298,6 +298,10 @@
   </div>
 
   <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const tokenParam = token ? '?token=' + encodeURIComponent(token) : '';
+
     const statusJson = document.getElementById('statusJson');
     const qrArea = document.getElementById('qrArea');
     const refreshStatus = document.getElementById('refreshStatus');
@@ -311,7 +315,7 @@
 
     async function fetchStatus() {
       try {
-        const res = await fetch('/status');
+        const res = await fetch('/status' + tokenParam);
         const data = await res.json();
         statusJson.textContent = JSON.stringify(data, null, 2);
 
@@ -344,7 +348,7 @@
       qrArea.classList.add('loading');
 
       try {
-        const res = await fetch('/qr');
+        const res = await fetch('/qr' + tokenParam);
         const data = await res.json();
         qrArea.classList.remove('loading');
 
@@ -386,7 +390,7 @@
       };
 
       try {
-        const res = await fetch('/send', {
+        const res = await fetch('/send' + tokenParam, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -420,7 +424,7 @@
       groupSelect.innerHTML = '<option value="">Selecione um grupo</option>';
 
       try {
-        const res = await fetch('/groups');
+        const res = await fetch('/groups' + tokenParam);
         const data = await res.json();
 
         if (!data.success) {

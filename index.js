@@ -15,6 +15,32 @@ import qrcode from 'qrcode-terminal';
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+const API_TOKEN = process.env.API_TOKEN || '';
+
+// Middleware de Autenticação Global
+app.use((req, res, next) => {
+  // Se houver um token configurado no .env, exige do cliente
+  if (API_TOKEN) {
+    const token = req.query.token || req.headers['authorization']?.replace('Bearer ', '');
+    
+    if (token !== API_TOKEN) {
+      // Se for a interface UI, mostra mensagem HTML mais amigável
+      if (req.path.startsWith('/ui')) {
+        return res.status(401).send(`
+          <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
+            <h1 style="color: #f56565;">401 Não Autorizado</h1>
+            <p>Você precisa fornecer um token válido para acessar o sistema.</p>
+            <p style="color: #718096; font-size: 0.9em;">Adicione <b>?token=SEU_TOKEN</b> na URL.</p>
+          </div>
+        `);
+      }
+      return res.status(401).json({ error: 'Acesso não autorizado. Forneça um token válido na query string ou header Authorization.' });
+    }
+  }
+  next();
+});
+
 app.use('/ui', express.static('public'));
 app.get('/ui', (req, res) => res.sendFile(new URL('./public/index.html', import.meta.url)));
 
