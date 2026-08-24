@@ -417,18 +417,30 @@ app.get('/groups', async (req, res) => {
 
   try {
     const groups = await sock.groupFetchAllParticipating();
-    const groupList = Object.entries(groups || {}).map(([jid, group]) => {
-      const participants = group.participants
-        ? typeof group.participants.size === 'number'
-          ? group.participants.size
-          : Object.keys(group.participants).length
-        : 0;
+    const includeDetails = req.query.full === 'true' || req.query.includeParticipants === 'true';
 
-      return {
+    const groupList = Object.entries(groups || {}).map(([jid, group]) => {
+      const rawParticipants = Array.isArray(group.participants)
+        ? group.participants
+        : group.participants && typeof group.participants === 'object'
+        ? Object.values(group.participants)
+        : [];
+
+      const participantsCount = rawParticipants.length;
+
+      const base = {
         jid,
         subject: group.subject || group.name || jid,
-        participants
+        participants: participantsCount
       };
+
+      if (includeDetails) {
+        base.participantList = rawParticipants;
+        base.desc = group.desc?.toString() || '';
+        base.owner = group.owner;
+      }
+
+      return base;
     });
 
     res.json({
@@ -439,6 +451,34 @@ app.get('/groups', async (req, res) => {
     logger.error('Erro ao listar grupos:', error);
     res.status(500).json({
       error: 'Erro ao listar grupos',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * GET /groups/:jid - Retorna metadados e todos os participantes de um grupo
+ */
+app.get('/groups/:jid', async (req, res) => {
+  if (!isConnected) {
+    return res.status(503).json({ error: 'WhatsApp não conectado' });
+  }
+
+  if (!hasValidSession()) {
+    return res.status(503).json({ error: 'Nenhuma sessão ativa.' });
+  }
+
+  try {
+    const { jid } = req.params;
+    const metadata = await sock.groupMetadata(jid);
+    res.json({
+      success: true,
+      group: metadata
+    });
+  } catch (error) {
+    logger.error(`Erro ao obter detalhes do grupo ${req.params.jid}:`, error);
+    res.status(500).json({
+      error: 'Erro ao obter detalhes do grupo',
       details: error.message
     });
   }
